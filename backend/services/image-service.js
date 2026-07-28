@@ -37,6 +37,24 @@ function createImageService() {
         prompt,
         provider: "cloudinary"
       };
+    },
+
+    async buildPromptFromConversation({ conversationId, memoryStore, request }) {
+      const history = memoryStore ? await memoryStore.getMessages(conversationId, 10) : [];
+      const context = history
+        .map((message) => `${message.role}: ${message.content}`)
+        .join("\n")
+        .slice(-3000);
+
+      if (!context) return "";
+
+      return [
+        "Create an image based on this recent RI chat context.",
+        "Focus on the user's current story/world idea and make it visually specific.",
+        `Latest image request: ${request}`,
+        "Recent context:",
+        context
+      ].join("\n");
     }
   };
 }
@@ -45,23 +63,59 @@ function isImageRequest(message) {
   const text = String(message || "").trim().toLowerCase();
   return (
     text.startsWith("/image ") ||
+    text === "/image" ||
     text.startsWith("image:") ||
     text.startsWith("draw ") ||
+    text.startsWith("create image ") ||
+    text.startsWith("create an image ") ||
     text.startsWith("generate image ") ||
+    text.startsWith("generate a picture ") ||
+    text.startsWith("make a picture ") ||
     text.includes("generate an image") ||
-    text.includes("make an image")
+    text.includes("make an image") ||
+    text.includes("create an image") ||
+    text.includes("can i get image") ||
+    text.includes("can i get an image") ||
+    text.includes("can you make image") ||
+    text.includes("can you make an image") ||
+    text.includes("can you draw") ||
+    text.includes("send me an image") ||
+    text.includes("send image") ||
+    text.includes("show me an image") ||
+    text.includes("show image") ||
+    text.includes("picture of") ||
+    text.includes("image of")
   );
 }
 
 function extractImagePrompt(message) {
-  return String(message || "")
+  const prompt = String(message || "")
     .replace(/^\/image\s+/i, "")
+    .replace(/^\/image$/i, "")
     .replace(/^image:\s*/i, "")
     .replace(/^draw\s+/i, "")
+    .replace(/^create image\s+/i, "")
+    .replace(/^create an image\s+/i, "")
     .replace(/^generate image\s+/i, "")
     .replace(/^generate an image\s+/i, "")
+    .replace(/^generate a picture\s+/i, "")
     .replace(/^make an image\s+/i, "")
+    .replace(/^make a picture\s+/i, "")
+    .replace(/^can i get an? image\s*/i, "")
+    .replace(/^can you make an? image\s*/i, "")
+    .replace(/^can you draw\s*/i, "")
+    .replace(/^send me an image\s*/i, "")
+    .replace(/^send image\s*/i, "")
+    .replace(/^show me an image\s*/i, "")
+    .replace(/^show image\s*/i, "")
     .trim();
+
+  if (/^[\s.?!,:;-]*$/.test(prompt)) return "";
+  if (/^(can i get|can you make|send me|show me)?\s*(an?\s*)?(image|picture|photo|drawing)[\s.?!,:;-]*$/i.test(prompt)) {
+    return "";
+  }
+
+  return prompt;
 }
 
 function configureCloudinary() {

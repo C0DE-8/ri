@@ -1,6 +1,6 @@
 const express = require("express");
 
-function createChatRouter({ imageService, riChat }) {
+function createChatRouter({ imageService, memoryStore, riChat }) {
   const router = express.Router();
 
   async function handleChatFlow(req, res) {
@@ -12,7 +12,14 @@ function createChatRouter({ imageService, riChat }) {
 
     try {
       if (imageService.isImageRequest(message)) {
-        const prompt = imageService.extractImagePrompt(message);
+        let prompt = imageService.extractImagePrompt(message);
+        if (!prompt) {
+          prompt = await imageService.buildPromptFromConversation({
+            conversationId,
+            memoryStore,
+            request: message
+          });
+        }
         if (!prompt) return res.status(400).json({ error: "image prompt is required" });
 
         const image = await imageService.generate(prompt);

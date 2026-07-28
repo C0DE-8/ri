@@ -1,12 +1,12 @@
 const express = require("express");
 const { isAllowedTelegramChat } = require("../services/telegram-polling");
 
-function createTelegramRouter({ imageService, riChat, getPublicUrl }) {
+function createTelegramRouter({ imageService, memoryStore, riChat, getPublicUrl }) {
   const router = express.Router();
 
   router.post("/webhook", async (req, res) => {
     try {
-      await handleTelegramUpdate(req.body, { imageService, riChat });
+      await handleTelegramUpdate(req.body, { imageService, memoryStore, riChat });
       return res.json({ ok: true });
     } catch (error) {
       console.error("Telegram webhook failed:", error.message);
@@ -41,7 +41,7 @@ function createTelegramRouter({ imageService, riChat, getPublicUrl }) {
   return router;
 }
 
-async function handleTelegramUpdate(update, { imageService, riChat }) {
+async function handleTelegramUpdate(update, { imageService, memoryStore, riChat }) {
   const message = update?.message;
   if (!message) return;
 
@@ -56,7 +56,16 @@ async function handleTelegramUpdate(update, { imageService, riChat }) {
   }
 
   if (imageService.isImageRequest(text)) {
-    const prompt = imageService.extractImagePrompt(text);
+    const conversationId = `telegram:${chatId}`;
+    let prompt = imageService.extractImagePrompt(text);
+    if (!prompt) {
+      prompt = await imageService.buildPromptFromConversation({
+        conversationId,
+        memoryStore,
+        request: text
+      });
+    }
+
     if (!prompt) {
       await sendTelegramMessage(chatId, "Send an image prompt like: /image a fantasy spider city at sunset");
       return;

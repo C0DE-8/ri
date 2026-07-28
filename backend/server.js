@@ -76,12 +76,13 @@ app.get("/debug/config", (req, res) => {
   });
 });
 
-app.use("/chat", createChatRouter({ imageService, riChat }));
+app.use("/chat", createChatRouter({ imageService, memoryStore, riChat }));
 
 app.use(
   "/telegram",
   createTelegramRouter({
     imageService,
+    memoryStore,
     riChat,
     getPublicUrl
   })
@@ -96,7 +97,7 @@ app.get("/db/ping", async (req, res) => {
   }
 });
 
-startTelegramPolling({ imageService, riChat });
+startTelegramPolling({ imageService, memoryStore, riChat });
 
 if (require.main === module) {
   const server = app.listen(port, () => {

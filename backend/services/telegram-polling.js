@@ -1,6 +1,6 @@
 const TelegramBot = require("node-telegram-bot-api");
 
-function startTelegramPolling({ imageService, riChat }) {
+function startTelegramPolling({ imageService, memoryStore, riChat }) {
   if (!shouldStartTelegramPolling()) return;
 
   const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
@@ -17,7 +17,16 @@ function startTelegramPolling({ imageService, riChat }) {
 
     try {
       if (imageService.isImageRequest(text)) {
-        const prompt = imageService.extractImagePrompt(text);
+        const conversationId = `telegram:${chatId}`;
+        let prompt = imageService.extractImagePrompt(text);
+        if (!prompt) {
+          prompt = await imageService.buildPromptFromConversation({
+            conversationId,
+            memoryStore,
+            request: text
+          });
+        }
+
         if (!prompt) {
           return bot.sendMessage(chatId, "Send an image prompt like: /image a fantasy spider city at sunset");
         }
