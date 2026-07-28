@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "test": "node --check server.js && node --check db.js && node --check diamond-sql.js && node --check profiles/ri.js && node --check routes/chat.js && node --check routes/telegram.js && node --check services/image-service.js && node --check services/memory-store.js && node --check services/ri-chat.js && node --check services/telegram-polling.js && node --check utils/auth.js && node --check utils/http.js",
+    "test": "node --check server.js && node --check db.js && node --check diamond-sql.js && node --check profiles/ri.js && node --check routes/chat.js && node --check routes/telegram.js && node --check services/image-service.js && node --check services/memory-store.js && node --check services/ri-chat.js && node --check services/telegram-polling.js && node --check services/telegram-ui.js && node --check utils/auth.js && node --check utils/http.js",
     "start": "node server.js"
   },
   "keywords": [],

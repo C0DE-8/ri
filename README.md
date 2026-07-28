@@ -74,4 +74,4 @@ RI keeps recent conversation memory per Telegram chat through the DBMS Gateway w
 
 RI generates the image with OpenAI, uploads it to Cloudinary, and sends the Cloudinary image URL back as a Telegram photo.
 
-To clear Telegram memory, send `/clear` or tap the `Clear chat` button RI shows on `/start`.
+Telegram shows persistent `Home` and `Clear chat` buttons. Tap `Home` any time to see RI status/help, and tap `Clear chat` to delete RI's memory for your Telegram conversation.

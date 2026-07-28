@@ -1,4 +1,5 @@
 const TelegramBot = require("node-telegram-bot-api");
+const { homeKeyboard, homeMessage } = require("./telegram-ui");
 
 function startTelegramPolling({ imageService, memoryStore, riChat }) {
   if (!shouldStartTelegramPolling()) return;
@@ -11,8 +12,13 @@ function startTelegramPolling({ imageService, memoryStore, riChat }) {
 
     if (!isAllowedTelegramChat(chatId)) return;
 
-    if (!text || text.startsWith("/start")) {
-      return bot.sendMessage(chatId, "RI is online. Send a message to chat.");
+    if (!text || text.startsWith("/start") || text.toLowerCase() === "home") {
+      return bot.sendMessage(chatId, homeMessage(), { reply_markup: homeKeyboard() });
+    }
+
+    if (text === "/clear" || text.toLowerCase() === "clear chat") {
+      await memoryStore.clearConversation(`telegram:${chatId}`);
+      return bot.sendMessage(chatId, "Chat memory cleared.", { reply_markup: homeKeyboard() });
     }
 
     try {
@@ -28,19 +34,24 @@ function startTelegramPolling({ imageService, memoryStore, riChat }) {
         }
 
         if (!prompt) {
-          return bot.sendMessage(chatId, "Send an image prompt like: /image a fantasy spider city at sunset");
+          return bot.sendMessage(chatId, "Send an image prompt like: /image a fantasy spider city at sunset", {
+            reply_markup: homeKeyboard()
+          });
         }
 
-        await bot.sendMessage(chatId, "Generating image...");
+        await bot.sendMessage(chatId, "Generating image...", { reply_markup: homeKeyboard() });
         const image = await imageService.generate(prompt);
-        return bot.sendPhoto(chatId, image.url, { caption: prompt.slice(0, 1024) });
+        return bot.sendPhoto(chatId, image.url, {
+          caption: prompt.slice(0, 1024),
+          reply_markup: homeKeyboard()
+        });
       }
 
       const reply = await riChat.reply(text, { conversationId: `telegram:${chatId}` });
-      return bot.sendMessage(chatId, reply || "I did not get a response.");
+      return bot.sendMessage(chatId, reply || "I did not get a response.", { reply_markup: homeKeyboard() });
     } catch (error) {
       console.error("Telegram reply failed:", error.message);
-      return bot.sendMessage(chatId, "RI hit an error while replying.");
+      return bot.sendMessage(chatId, "RI hit an error while replying.", { reply_markup: homeKeyboard() });
     }
   });
 

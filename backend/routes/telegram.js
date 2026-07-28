@@ -1,5 +1,6 @@
 const express = require("express");
 const { isAllowedTelegramChat } = require("../services/telegram-polling");
+const { homeKeyboard, homeMessage } = require("../services/telegram-ui");
 
 function createTelegramRouter({ imageService, memoryStore, riChat, getPublicUrl }) {
   const router = express.Router();
@@ -55,14 +56,14 @@ async function handleTelegramUpdate(update, { imageService, memoryStore, riChat 
   if (!chatId) return;
   if (!isAllowedTelegramChat(chatId)) return;
 
-  if (!text || text.startsWith("/start")) {
-    await sendTelegramMessage(chatId, "RI is working. Send a message to chat.", clearChatKeyboard());
+  if (!text || text.startsWith("/start") || text.toLowerCase() === "home") {
+    await sendTelegramMessage(chatId, homeMessage(), homeKeyboard());
     return;
   }
 
   if (text === "/clear" || text.toLowerCase() === "clear chat") {
     await clearTelegramChat(chatId, memoryStore);
-    await sendTelegramMessage(chatId, "Chat memory cleared.", clearChatKeyboard());
+    await sendTelegramMessage(chatId, "Chat memory cleared.", homeKeyboard());
     return;
   }
 
@@ -100,7 +101,7 @@ async function handleTelegramCallback(callbackQuery, memoryStore) {
   if (callbackQuery.data === "clear_chat") {
     await clearTelegramChat(chatId, memoryStore);
     await answerCallbackQuery(callbackQuery.id, "Chat memory cleared.");
-    await sendTelegramMessage(chatId, "Chat memory cleared.", clearChatKeyboard());
+    await sendTelegramMessage(chatId, "Chat memory cleared.", homeKeyboard());
   }
 }
 
@@ -121,7 +122,8 @@ async function sendTelegramPhoto(chatId, photo, caption) {
   return telegramApi("sendPhoto", {
     chat_id: chatId,
     photo,
-    caption: caption ? caption.slice(0, 1024) : undefined
+    caption: caption ? caption.slice(0, 1024) : undefined,
+    reply_markup: homeKeyboard()
   });
 }
 
@@ -152,19 +154,6 @@ async function answerCallbackQuery(callbackQueryId, text) {
     callback_query_id: callbackQueryId,
     text
   });
-}
-
-function clearChatKeyboard() {
-  return {
-    inline_keyboard: [
-      [
-        {
-          text: "Clear chat",
-          callback_data: "clear_chat"
-        }
-      ]
-    ]
-  };
 }
 
 module.exports = {
