@@ -69,9 +69,22 @@ function createMemoryStore({ db }) {
     fallback.set(conversationId, messages.slice(-40));
   }
 
+  async function clearConversation(conversationId) {
+    if (await ensureDb()) {
+      try {
+        await db.execute("DELETE FROM ri_chat_messages WHERE conversation_id = ?", [conversationId]);
+      } catch (error) {
+        console.warn("RI memory delete failed; clearing in-memory fallback:", error.message);
+      }
+    }
+
+    fallback.delete(conversationId);
+  }
+
   return {
     getMessages,
-    appendMessage
+    appendMessage,
+    clearConversation
   };
 }
 

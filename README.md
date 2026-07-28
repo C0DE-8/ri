@@ -44,9 +44,11 @@ PUBLIC_URL=https://ri-opal.vercel.app
 ## Routes
 
 - `GET /health` checks the DBMS Gateway connection.
+- `GET /` confirms RI is working.
 - `GET /debug/config` shows redacted runtime config for debugging.
 - `POST /chat/flow` accepts `{ "message": "hello" }` and returns `{ "reply": "..." }`.
 - `POST /chat/flow` can also generate images with prompts like `{ "message": "/image a fantasy spider city" }`.
+- `DELETE /chat/flow?conversationId=api:default` clears stored chat memory for a conversation.
 - `POST /chat` is kept as a compatibility alias for the same flow.
 - `POST /telegram/webhook` receives Telegram updates.
 - `POST /telegram/set-webhook` registers `PUBLIC_URL/telegram/webhook` with Telegram.
@@ -71,3 +73,5 @@ RI keeps recent conversation memory per Telegram chat through the DBMS Gateway w
 ```
 
 RI generates the image with OpenAI, uploads it to Cloudinary, and sends the Cloudinary image URL back as a Telegram photo.
+
+To clear Telegram memory, send `/clear` or tap the `Clear chat` button RI shows on `/start`.

@@ -20,7 +20,7 @@ function createTelegramRouter({ imageService, memoryStore, riChat, getPublicUrl 
       const webhookUrl = `${baseUrl}/telegram/webhook`;
       const result = await telegramApi("setWebhook", {
         url: webhookUrl,
-        allowed_updates: ["message"]
+        allowed_updates: ["message", "callback_query"]
       });
 
       return res.json({ ok: true, webhookUrl, telegram: result });
@@ -42,6 +42,11 @@ function createTelegramRouter({ imageService, memoryStore, riChat, getPublicUrl 
 }
 
 async function handleTelegramUpdate(update, { imageService, memoryStore, riChat }) {
+  if (update?.callback_query) {
+    await handleTelegramCallback(update.callback_query, memoryStore);
+    return;
+  }
+
   const message = update?.message;
   if (!message) return;
 
@@ -51,7 +56,13 @@ async function handleTelegramUpdate(update, { imageService, memoryStore, riChat 
   if (!isAllowedTelegramChat(chatId)) return;
 
   if (!text || text.startsWith("/start")) {
-    await sendTelegramMessage(chatId, "RI is online. Send a message to chat.");
+    await sendTelegramMessage(chatId, "RI is working. Send a message to chat.", clearChatKeyboard());
+    return;
+  }
+
+  if (text === "/clear" || text.toLowerCase() === "clear chat") {
+    await clearTelegramChat(chatId, memoryStore);
+    await sendTelegramMessage(chatId, "Chat memory cleared.", clearChatKeyboard());
     return;
   }
 
@@ -81,11 +92,28 @@ async function handleTelegramUpdate(update, { imageService, memoryStore, riChat 
   await sendTelegramMessage(chatId, reply || "I did not get a response.");
 }
 
-async function sendTelegramMessage(chatId, text) {
+async function handleTelegramCallback(callbackQuery, memoryStore) {
+  const chatId = callbackQuery.message?.chat?.id;
+  if (!chatId) return;
+  if (!isAllowedTelegramChat(chatId)) return;
+
+  if (callbackQuery.data === "clear_chat") {
+    await clearTelegramChat(chatId, memoryStore);
+    await answerCallbackQuery(callbackQuery.id, "Chat memory cleared.");
+    await sendTelegramMessage(chatId, "Chat memory cleared.", clearChatKeyboard());
+  }
+}
+
+async function clearTelegramChat(chatId, memoryStore) {
+  await memoryStore.clearConversation(`telegram:${chatId}`);
+}
+
+async function sendTelegramMessage(chatId, text, replyMarkup) {
   return telegramApi("sendMessage", {
     chat_id: chatId,
     text,
-    disable_web_page_preview: true
+    disable_web_page_preview: true,
+    reply_markup: replyMarkup
   });
 }
 
@@ -117,6 +145,26 @@ async function telegramApi(method, body) {
   }
 
   return payload.result;
+}
+
+async function answerCallbackQuery(callbackQueryId, text) {
+  return telegramApi("answerCallbackQuery", {
+    callback_query_id: callbackQueryId,
+    text
+  });
+}
+
+function clearChatKeyboard() {
+  return {
+    inline_keyboard: [
+      [
+        {
+          text: "Clear chat",
+          callback_data: "clear_chat"
+        }
+      ]
+    ]
+  };
 }
 
 module.exports = {

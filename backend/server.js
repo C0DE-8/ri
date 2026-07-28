@@ -35,6 +35,15 @@ app.set("trust proxy", true);
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.json({
+    ok: true,
+    name: "RI",
+    status: "working",
+    message: "RI is working."
+  });
+});
+
 app.get("/health", async (req, res) => {
   if (!hasFullApiKey(process.env.API_KEY)) {
     return res.status(400).json({
