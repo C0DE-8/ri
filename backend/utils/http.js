@@ -5,7 +5,10 @@ function getPublicUrl(req) {
 }
 
 function normalizeUrl(url) {
-  return String(url || "").replace(/\/$/, "");
+  const value = String(url || "").replace(/\/$/, "");
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://${value}`;
 }
 
 function maskSecret(value) {
