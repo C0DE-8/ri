@@ -1,6 +1,6 @@
 const TelegramBot = require("node-telegram-bot-api");
 
-function startTelegramPolling({ riChat }) {
+function startTelegramPolling({ imageService, riChat }) {
   if (!shouldStartTelegramPolling()) return;
 
   const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
@@ -16,7 +16,18 @@ function startTelegramPolling({ riChat }) {
     }
 
     try {
-      const reply = await riChat.reply(text);
+      if (imageService.isImageRequest(text)) {
+        const prompt = imageService.extractImagePrompt(text);
+        if (!prompt) {
+          return bot.sendMessage(chatId, "Send an image prompt like: /image a fantasy spider city at sunset");
+        }
+
+        await bot.sendMessage(chatId, "Generating image...");
+        const image = await imageService.generate(prompt);
+        return bot.sendPhoto(chatId, image.url, { caption: prompt.slice(0, 1024) });
+      }
+
+      const reply = await riChat.reply(text, { conversationId: `telegram:${chatId}` });
       return bot.sendMessage(chatId, reply || "I did not get a response.");
     } catch (error) {
       console.error("Telegram reply failed:", error.message);

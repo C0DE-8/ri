@@ -4,6 +4,12 @@ const express = require("express");
 const morgan = require("morgan");
 const db = require("./db");
 const { RI_SYSTEM_PROMPT } = require("./profiles/ri");
+const {
+  createImageService,
+  extractImagePrompt,
+  isImageRequest
+} = require("./services/image-service");
+const { createMemoryStore } = require("./services/memory-store");
 const { createRiChatService } = require("./services/ri-chat");
 const {
   getAllowedTelegramChatIds,
@@ -17,7 +23,13 @@ const { getPublicUrl, maskSecret } = require("./utils/http");
 
 const app = express();
 const port = Number(process.env.PORT || 5050);
-const riChat = createRiChatService();
+const imageService = {
+  ...createImageService(),
+  extractImagePrompt,
+  isImageRequest
+};
+const memoryStore = createMemoryStore({ db });
+const riChat = createRiChatService({ memoryStore });
 
 app.set("trust proxy", true);
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
@@ -48,8 +60,15 @@ app.get("/debug/config", (req, res) => {
     dbmsUrl: process.env.DBMS_URL || "http://localhost:4000",
     dbmsApiKey: maskSecret(process.env.API_KEY),
     openaiModel: riChat.model,
+    openaiImageModel: imageService.model,
     openaiApiKey: maskSecret(process.env.OPENAI_API_KEY),
     riPersonalityLoaded: Boolean(RI_SYSTEM_PROMPT),
+    memoryEnabled: true,
+    cloudinaryConfigured: Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_API_SECRET
+    ),
     telegramBotToken: maskSecret(process.env.TELEGRAM_BOT_TOKEN),
     telegramPollingEnabled: shouldStartTelegramPolling(),
     telegramAllowedChatIds: getAllowedTelegramChatIds(),
@@ -57,11 +76,12 @@ app.get("/debug/config", (req, res) => {
   });
 });
 
-app.use("/chat", createChatRouter({ riChat }));
+app.use("/chat", createChatRouter({ imageService, riChat }));
 
 app.use(
   "/telegram",
   createTelegramRouter({
+    imageService,
     riChat,
     getPublicUrl
   })
@@ -76,7 +96,7 @@ app.get("/db/ping", async (req, res) => {
   }
 });
 
-startTelegramPolling({ riChat });
+startTelegramPolling({ imageService, riChat });
 
 if (require.main === module) {
   const server = app.listen(port, () => {

@@ -8,9 +8,10 @@ const RI_SYSTEM_PROMPT = [
   "For casual chat, sound natural and human without being overly formal."
 ].join(" ");
 
-function buildRiMessages(message) {
+function buildRiMessages(message, history = []) {
   return [
     { role: "system", content: RI_SYSTEM_PROMPT },
+    ...history,
     { role: "user", content: message }
   ];
 }
