@@ -27,8 +27,6 @@ Required for Telegram:
 TELEGRAM_BOT_TOKEN=replace-with-telegram-bot-token
 TELEGRAM_ALLOWED_CHAT_IDS=1300403822
 TELEGRAM_POLLING=false
-TELEGRAM_WEBHOOK_SECRET=replace-with-random-webhook-secret
-TELEGRAM_ADMIN_SECRET=replace-with-random-admin-secret
 PUBLIC_URL=https://ri-opal.vercel.app
 ```
 
@@ -39,15 +37,15 @@ PUBLIC_URL=https://ri-opal.vercel.app
 - `POST /chat/flow` accepts `{ "message": "hello" }` and returns `{ "reply": "..." }`.
 - `POST /chat` is kept as a compatibility alias for the same flow.
 - `POST /telegram/webhook` receives Telegram updates.
-- `POST /telegram/set-webhook?secret=TELEGRAM_ADMIN_SECRET` registers `PUBLIC_URL/telegram/webhook` with Telegram.
-- `GET /telegram/status?secret=TELEGRAM_ADMIN_SECRET` checks Telegram webhook status.
+- `POST /telegram/set-webhook` registers `PUBLIC_URL/telegram/webhook` with Telegram.
+- `GET /telegram/status` checks Telegram webhook status.
 
 ## Telegram Setup
 
 After deploying the env vars to Vercel, call:
 
 ```sh
-curl -X POST "https://ri-opal.vercel.app/telegram/set-webhook?secret=YOUR_TELEGRAM_ADMIN_SECRET"
+curl -X POST "https://ri-opal.vercel.app/telegram/set-webhook"
 ```
 
 Then send a message to the bot in Telegram. Telegram will call `/telegram/webhook`, RI will generate a reply with OpenAI, and the backend will send the response back to the chat.

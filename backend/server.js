@@ -12,7 +12,7 @@ const {
 } = require("./services/telegram-polling");
 const { createChatRouter } = require("./routes/chat");
 const { createTelegramRouter } = require("./routes/telegram");
-const { hasFullApiKey, isAdminAuthorized } = require("./utils/auth");
+const { hasFullApiKey } = require("./utils/auth");
 const { getPublicUrl, maskSecret } = require("./utils/http");
 
 const app = express();
@@ -41,10 +41,6 @@ app.get("/health", async (req, res) => {
 });
 
 app.get("/debug/config", (req, res) => {
-  if (!isAdminAuthorized(req)) {
-    return res.status(401).json({ ok: false, error: "unauthorized" });
-  }
-
   res.json({
     ok: true,
     port,
@@ -56,7 +52,6 @@ app.get("/debug/config", (req, res) => {
     riPersonalityLoaded: Boolean(RI_SYSTEM_PROMPT),
     telegramBotToken: maskSecret(process.env.TELEGRAM_BOT_TOKEN),
     telegramPollingEnabled: shouldStartTelegramPolling(),
-    telegramWebhookSecret: maskSecret(process.env.TELEGRAM_WEBHOOK_SECRET),
     telegramAllowedChatIds: getAllowedTelegramChatIds(),
     publicUrl: getPublicUrl(req)
   });
@@ -68,8 +63,7 @@ app.use(
   "/telegram",
   createTelegramRouter({
     riChat,
-    getPublicUrl,
-    isAdminAuthorized
+    getPublicUrl
   })
 );
 

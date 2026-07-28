@@ -1,14 +1,10 @@
 const express = require("express");
 const { isAllowedTelegramChat } = require("../services/telegram-polling");
 
-function createTelegramRouter({ riChat, getPublicUrl, isAdminAuthorized }) {
+function createTelegramRouter({ riChat, getPublicUrl }) {
   const router = express.Router();
 
   router.post("/webhook", async (req, res) => {
-    if (!isTelegramWebhookAuthorized(req)) {
-      return res.status(401).json({ ok: false, error: "unauthorized" });
-    }
-
     try {
       await handleTelegramUpdate(req.body, riChat);
       return res.json({ ok: true });
@@ -19,16 +15,11 @@ function createTelegramRouter({ riChat, getPublicUrl, isAdminAuthorized }) {
   });
 
   router.post("/set-webhook", async (req, res) => {
-    if (!isAdminAuthorized(req)) {
-      return res.status(401).json({ ok: false, error: "unauthorized" });
-    }
-
     try {
       const baseUrl = getPublicUrl(req);
       const webhookUrl = `${baseUrl}/telegram/webhook`;
       const result = await telegramApi("setWebhook", {
         url: webhookUrl,
-        secret_token: process.env.TELEGRAM_WEBHOOK_SECRET || undefined,
         allowed_updates: ["message"]
       });
 
@@ -39,10 +30,6 @@ function createTelegramRouter({ riChat, getPublicUrl, isAdminAuthorized }) {
   });
 
   router.get("/status", async (req, res) => {
-    if (!isAdminAuthorized(req)) {
-      return res.status(401).json({ ok: false, error: "unauthorized" });
-    }
-
     try {
       const result = await telegramApi("getWebhookInfo");
       return res.json({ ok: true, telegram: result });
@@ -100,12 +87,6 @@ async function telegramApi(method, body) {
   }
 
   return payload.result;
-}
-
-function isTelegramWebhookAuthorized(req) {
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (!secret) return true;
-  return req.get("x-telegram-bot-api-secret-token") === secret;
 }
 
 module.exports = {
