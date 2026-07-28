@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "node --check server.js && node --check db.js && node --check diamond-sql.js",
+    "dev": "nodemon server.js",
+    "test": "node --check server.js && node --check db.js && node --check diamond-sql.js && node --check ri-profile.js",
     "start": "node server.js"
   },
   "keywords": [],
@@ -13,6 +14,12 @@
   "type": "commonjs",
   "dependencies": {
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "morgan": "^1.11.0",
+    "node-telegram-bot-api": "^1.2.0",
+    "openai": "^6.49.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }
